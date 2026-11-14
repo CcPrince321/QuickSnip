@@ -1,0 +1,12 @@
+# 构建产物
+bin/
+obj/
+dist/
+*.user
+*.suo
+.vs/
+*.log
+
+# 发布/安装包
+*.pdb
+*.zip

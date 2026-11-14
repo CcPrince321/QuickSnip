@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>QuickSnip.CoordProbe</RootNamespace>
+    <AssemblyName>CoordProbe</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>false</UseWindowsForms>
+    <NoWarn>$(NoWarn);WFAC010</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\src\Native\*.cs" Link="Native\%(Filename)%(Extension)" />
+    <Compile Include="..\..\src\Services\CaptureService.cs" Link="Services\CaptureService.cs" />
+    <Compile Include="..\..\src\Services\ClipboardService.cs" Link="Services\ClipboardService.cs" />
+    <Compile Include="..\..\src\Services\Log.cs" Link="Services\Log.cs" />
+  </ItemGroup>
+
+</Project>

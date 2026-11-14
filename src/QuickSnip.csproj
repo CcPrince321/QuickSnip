@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>QuickSnip</RootNamespace>
+    <AssemblyName>QuickSnip</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <EnableDefaultApplicationDefinition>true</EnableDefaultApplicationDefinition>
+    <SatelliteResourceLanguages>en;zh-Hans</SatelliteResourceLanguages>
+    <AssemblyVersion>0.1.0.0</AssemblyVersion>
+    <FileVersion>0.1.0.0</FileVersion>
+    <Product>QuickSnip</Product>
+    <Description>轻量截图工具：全局热键 + 多屏混合 DPI 冻结帧框选</Description>
+    <!-- WFAC010 是给纯 WinForms 应用的建议，我们的 DPI 感知靠 app.manifest 的 PerMonitorV2，必须保留 -->
+    <NoWarn>$(NoWarn);WFAC010</NoWarn>
+  </PropertyGroup>
+
+</Project>

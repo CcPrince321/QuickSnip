@@ -1,0 +1,67 @@
+<Window x:Class="QuickSnip.Overlay.OverlayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="QuickSnip Overlay"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        ShowActivated="False"
+        Topmost="True"
+        AllowsTransparency="False"
+        Background="Black"
+        WindowStartupLocation="Manual"
+        SnapsToDevicePixels="True"
+        UseLayoutRounding="False"
+        Cursor="Cross"
+        Focusable="True">
+
+    <!--
+        WindowChrome 用来彻底去掉 Win10 给 WindowStyle=None 窗口偷偷加的那圈
+        不可见 resize 边框；不处理的话遮罩会比屏幕小几个像素，右上角永远差一条。
+    -->
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="0"
+                      ResizeBorderThickness="0"
+                      GlassFrameThickness="0"
+                      CornerRadius="0"
+                      UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
+
+    <Grid x:Name="Root" ClipToBounds="True">
+        <!-- 冻结帧切片，1 位图像素 = 1 物理像素 -->
+        <Image x:Name="FrameImage"
+               Stretch="Fill"
+               IsHitTestVisible="False"
+               RenderOptions.BitmapScalingMode="NearestNeighbor" />
+
+        <!-- 压暗层：用 GeometryGroup(EvenOdd) 在外框里挖出选区洞，一个 visual 搞定 -->
+        <Path x:Name="Dim" Fill="#8C000000" IsHitTestVisible="False" />
+
+        <Canvas x:Name="AnnoLayer" IsHitTestVisible="False">
+            <Rectangle x:Name="SelBorder"
+                       Stroke="#FF2F80ED"
+                       StrokeThickness="1"
+                       Visibility="Collapsed" />
+            <Border x:Name="SizeTag"
+                    Background="#E6161A1E"
+                    CornerRadius="2"
+                    Padding="6,2,6,3"
+                    Visibility="Collapsed">
+                <TextBlock x:Name="SizeText" Foreground="White" FontSize="11" />
+            </Border>
+        </Canvas>
+
+        <Border x:Name="HintTag"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Top"
+                Margin="0,24,0,0"
+                Background="#CC16181C"
+                CornerRadius="14"
+                Padding="16,7,16,8"
+                IsHitTestVisible="False">
+            <TextBlock Foreground="#F2F3F5"
+                       FontSize="12"
+                       Text="拖动框选　·　Esc / 右键取消　·　双击或 Ctrl+A 全屏" />
+        </Border>
+    </Grid>
+</Window>
