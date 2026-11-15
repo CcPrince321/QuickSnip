@@ -6,8 +6,8 @@
 ![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-lightgrey)
 ![.NET](https://img.shields.io/badge/.NET-8.0-512BD4)
 
-> **当前版本 v0.1 —— 只完成了第 1 轮（截图地基）**：全局热键、多屏混合 DPI 精确框选、复制到剪贴板。
-> 标注、贴图、OCR、滚动截图都还没做，见 [路线图](#路线图)。
+> **当前版本 v0.2**：全局热键、多屏混合 DPI 精确框选、复制到剪贴板、**自动保存 PNG**、安装程序。
+> 标注、贴图、OCR、滚动截图还没做，见 [路线图](#路线图)。
 
 ---
 
@@ -29,20 +29,27 @@
 - **多屏混合 DPI 正确**：主屏 150% + 副屏 100%，副屏在主屏左侧/上方也正确
 - **跨屏框选连续**：从主屏按下拖到副屏松开，选区不断裂、不偏移
 - **冻结帧框选**：按下热键时抓一张整个虚拟桌面的位图，拖拽期间零截屏、无卡顿、边缘不闪
+- **自动保存 PNG**：截图同时存到本地文件夹（安装时可选择位置，默认 `图片\QuickSnip`）
 - **单击取消 / 双击全屏 / Ctrl+A 全屏 / Esc 取消**
-- **零安装**：自包含单文件 exe，机器上不需要装 .NET 运行时
+- **零依赖**：安装包和便携版都不需要机器上装 .NET 运行时
 - **自带诊断**：物理坐标自检工具 + 冒烟自检 + 运行日志，偏移问题可定位到具体环节
 
 ## 快速开始
 
-### 方式一：下载即用（推荐）
+### 方式一：安装包（推荐）
 
-从 [Releases](../../releases) 下载 `QuickSnip.exe`，双击运行。
+从 [Releases](../../releases) 下载 `QuickSnip-Setup-v0.2.0.exe`。安装向导里可以选择：
 
-不需要安装 .NET，不需要管理员权限。启动后没有窗口，只有右下角托盘一个红色取景框图标
-（可能被折叠进 `^`）。
+- 安装位置（默认装到当前用户目录，**不需要管理员权限**）
+- **截图保存文件夹**（截图自动保存为 PNG 的位置）
+- 是否创建桌面快捷方式、是否开机自启
 
-### 方式二：从源码构建
+### 方式二：绿色版
+
+下载 `QuickSnip.exe` 直接双击运行。截图保存目录默认 `图片\QuickSnip`，可在
+`%APPDATA%\QuickSnip\settings.json` 里改 `saveDirectory`。
+
+### 方式三：从源码构建
 
 ```bat
 git clone https://github.com/CcPrince321/QuickSnip.git
@@ -59,6 +66,12 @@ dotnet publish src\QuickSnip.csproj -c Release -r win-x64 --self-contained true 
   -p:EnableCompressionInSingleFile=true -p:DebugType=none -o dist
 ```
 
+打安装包（需要 [Inno Setup 6](https://jrsoftware.org/isinfo.php)）：
+
+```bat
+iscc installer\QuickSnip.iss
+```
+
 > ⚠️ **不要直接双击 `src\bin\Debug\...\QuickSnip.exe`**。那是依赖框架的 apphost，会去系统里找
 > 全局 .NET；如果 .NET 只装在用户目录（`%LOCALAPPDATA%\Microsoft\dotnet`），它会弹
 > `You must install .NET` 然后退出。开发期用 `dotnet run`，交付期用 `dist\QuickSnip.exe`。
@@ -69,13 +82,25 @@ dotnet publish src\QuickSnip.csproj -c Release -r win-x64 --self-contained true 
 | --- | --- |
 | `Ctrl+Alt+A` | 开始截图（可在托盘菜单「热键设置…」里改） |
 | 拖拽 | 框选；跨屏拖拽也连续 |
-| 松手 | 裁切并复制到剪贴板 |
+| 松手 | 复制到剪贴板 + 自动保存 PNG（可在配置里关掉） |
 | 单击（不拖） | 取消（Snipaste 行为） |
 | 双击 | 全屏：鼠标所在显示器 |
 | `Ctrl+A` | 同上（全屏） |
 | `Esc` / 右键 | 取消 |
 
 配置文件：`%APPDATA%\QuickSnip\settings.json`；日志：`%APPDATA%\QuickSnip\logs\app.log`。
+
+| settings.json 字段 | 默认值 | 说明 |
+| --- | --- | --- |
+| `hotKey` | `Ctrl+Alt+A` | 全局热键，托盘菜单可改 |
+| `autoSavePng` | `true` | 截图后自动保存 PNG |
+| `saveDirectory` | `""`（= `图片\QuickSnip`） | PNG 保存目录 |
+| `doubleClickFullScreen` | `true` | 双击全屏；关掉后单击取消立即生效 |
+| `fullScreenUseWholeVirtualDesktop` | `false` | 全屏选区：鼠标所在屏 / 整个虚拟桌面 |
+| `showBalloonAfterCapture` | `true` | 截完弹托盘气泡 |
+| `showBalloonOnStartup` | `true` | 启动弹气泡 |
+
+托盘菜单里还有「打开截图文件夹」直达保存目录。
 
 ---
 
@@ -127,9 +152,10 @@ DIP       dip = mwp ÷ (dpi / 96)
 ```
 src/                     应用
   Native/                P/Invoke、PixelRect、屏幕枚举
-  Services/              抓帧、裁剪、剪贴板、热键、托盘、设置、日志
+  Services/              抓帧、裁剪、剪贴板、保存、热键、托盘、设置、日志
   Overlay/               遮罩窗口 + 会话协调器
   Views/                 热键设置窗口
+installer/               Inno Setup 安装脚本（安装时可选截图保存目录）
 tools/CoordProbe/        无界面自检（验证取数、抓帧、裁剪尺寸）
 ```
 

@@ -17,6 +17,9 @@
     <Compile Include="..\..\src\Native\*.cs" Link="Native\%(Filename)%(Extension)" />
     <Compile Include="..\..\src\Services\CaptureService.cs" Link="Services\CaptureService.cs" />
     <Compile Include="..\..\src\Services\ClipboardService.cs" Link="Services\ClipboardService.cs" />
+    <Compile Include="..\..\src\Services\SaveService.cs" Link="Services\SaveService.cs" />
+    <Compile Include="..\..\src\Services\SettingsStore.cs" Link="Services\SettingsStore.cs" />
+    <Compile Include="..\..\src\Services\HotKeySpec.cs" Link="Services\HotKeySpec.cs" />
     <Compile Include="..\..\src\Services\Log.cs" Link="Services\Log.cs" />
   </ItemGroup>
 

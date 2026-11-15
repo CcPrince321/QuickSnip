@@ -10,3 +10,7 @@ dist/
 # 发布/安装包
 *.pdb
 *.zip
+installer/output/
+
+# Inno Setup 编译中间产物
+*.iss.backup

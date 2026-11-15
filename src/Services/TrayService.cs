@@ -32,6 +32,7 @@ public sealed class TrayService : IDisposable
     public event Action? CaptureRequested;
     public event Action? SettingsRequested;
     public event Action? ScreenInfoRequested;
+    public event Action? OpenSaveFolderRequested;
     public event Action? ExitRequested;
 
     public void SetTooltip(string hotKeyDisplay)
@@ -54,10 +55,14 @@ public sealed class TrayService : IDisposable
         var screenInfo = new Forms.ToolStripMenuItem("屏幕信息…");
         screenInfo.Click += (_, _) => ScreenInfoRequested?.Invoke();
 
+        var openFolder = new Forms.ToolStripMenuItem("打开截图文件夹");
+        openFolder.Click += (_, _) => OpenSaveFolderRequested?.Invoke();
+
         var exit = new Forms.ToolStripMenuItem("退出");
         exit.Click += (_, _) => ExitRequested?.Invoke();
 
         menu.Items.Add(capture);
+        menu.Items.Add(openFolder);
         menu.Items.Add(settings);
         menu.Items.Add(screenInfo);
         menu.Items.Add(new Forms.ToolStripSeparator());

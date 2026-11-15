@@ -66,6 +66,35 @@ internal static class Program
         if (!edgeOk) failures++;
         Console.WriteLine($"edge crop    : {edgeCrop.PixelWidth} x {edgeCrop.PixelHeight}  -> {(edgeOk ? "OK" : "FAIL")}");
 
+        // 自动保存链路：把 200x200 裁剪存成 PNG 到临时目录，验文件存在且尺寸正确，然后删掉。
+        try
+        {
+            PixelRect b0 = monitors[0].Bounds;
+            var sel0 = new PixelRect(b0.X + b0.Width / 2 - 100, b0.Y + b0.Height / 2 - 100, 200, 200);
+            var crop0 = CaptureService.Crop(frame, sel0.Offset(-virt.X, -virt.Y));
+            string tmpDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "QuickSnip.CoordProbe");
+            if (System.IO.Directory.Exists(tmpDir)) System.IO.Directory.Delete(tmpDir, recursive: true);
+            string png = SaveService.SavePng(crop0, tmpDir);
+            int savedW, savedH; long bytes;
+            using (var fs = new System.IO.FileStream(png, System.IO.FileMode.Open, System.IO.FileAccess.Read))
+            {
+                var decoder = new PngBitmapDecoder(fs, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+                var saved = decoder.Frames[0];
+                savedW = saved.PixelWidth; savedH = saved.PixelHeight;
+                bytes = fs.Length;
+            }
+            bool saveOk = savedW == 200 && savedH == 200 && bytes > 0;
+            if (!saveOk) failures++;
+            Console.WriteLine($"png save     : {System.IO.Path.GetFileName(png)}  {savedW}x{savedH}  -> {(saveOk ? "OK" : "FAIL")}");
+            System.IO.File.Delete(png);
+            System.IO.Directory.Delete(tmpDir);
+        }
+        catch (Exception ex)
+        {
+            failures++;
+            Console.WriteLine($"png save     : FAIL  {ex.Message}");
+        }
+
         Console.WriteLine(failures == 0 ? "RESULT: PASS" : $"RESULT: {failures} FAIL");
         return failures == 0 ? 0 : 2;
     }

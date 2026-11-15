@@ -21,6 +21,12 @@ public sealed class AppSettings
     /// <summary>启动时弹一次气泡，用来确认「程序真的起来了」。</summary>
     public bool ShowBalloonOnStartup { get; set; } = true;
 
+    /// <summary>截完自动保存 PNG。</summary>
+    public bool AutoSavePng { get; set; } = true;
+
+    /// <summary>PNG 保存目录；空 = 图片\QuickSnip。</summary>
+    public string SaveDirectory { get; set; } = "";
+
     public HotKeySpec GetHotKeySpec() => HotKeySpec.Parse(HotKey);
 }
 

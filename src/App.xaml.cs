@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Text;
 using System.Threading;
 using System.Windows;
@@ -75,12 +76,14 @@ public partial class App : Application
         }
 
         _settings = SettingsStore.Load();
-        Log.Write($"--- app start pid={Environment.ProcessId} settings={SettingsStore.FilePath} hotKey={_settings.HotKey}");
+        ApplyInstallerSaveDirectoryHint();
+        Log.Write($"--- app start pid={Environment.ProcessId} settings={SettingsStore.FilePath} hotKey={_settings.HotKey} saveDir={SaveService.ResolveDirectory(_settings)}");
 
         _tray = new TrayService();
         _tray.CaptureRequested += () => Dispatcher.BeginInvoke(new Action(StartCapture));
         _tray.SettingsRequested += () => Dispatcher.BeginInvoke(new Action(ShowHotKeySettings));
         _tray.ScreenInfoRequested += () => Dispatcher.BeginInvoke(new Action(ShowScreenInfo));
+        _tray.OpenSaveFolderRequested += () => Dispatcher.BeginInvoke(new Action(OpenSaveFolder));
         _tray.ExitRequested += () => Dispatcher.BeginInvoke(new Action(ExitApp));
 
         _hotKeys = new HotKeyManager();
@@ -215,6 +218,33 @@ public partial class App : Application
         _activateSignal = null;
     }
 
+    /// <summary>
+    /// 安装程序里用户选的「截图保存位置」通过一个 marker 文件传过来。
+    /// 启动时采纳一次（写进 settings.json）然后删掉 marker——之后用户改配置就不会被覆盖。
+    /// </summary>
+    private void ApplyInstallerSaveDirectoryHint()
+    {
+        try
+        {
+            string marker = Path.Combine(SettingsStore.Directory, "save-directory.txt");
+            if (!File.Exists(marker)) return;
+
+            string dir = File.ReadAllText(marker).Trim().Trim('"');
+            File.Delete(marker);
+
+            if (string.IsNullOrWhiteSpace(dir)) return;
+            if (dir == _settings.SaveDirectory) return;
+
+            _settings.SaveDirectory = dir;
+            SettingsStore.Save(_settings);
+            Log.Write($"save directory adopted from installer: {dir}");
+        }
+        catch (Exception ex)
+        {
+            Log.Exception("apply installer save-directory hint failed", ex);
+        }
+    }
+
     private void StartCapture()
     {
         Log.Write($"StartCapture: session={( _session == null ? "null" : "active")}");
@@ -244,17 +274,66 @@ public partial class App : Application
 
         if (image == null) return; // 用户取消（Esc / 右键 / 单击）
 
-        bool copied = ClipboardService.TrySetImage(image, out string? error);
+        bool copied = ClipboardService.TrySetImage(image, out string? clipError);
+
+        string? savedPath = null;
+        string? saveError = null;
+        if (_settings.AutoSavePng)
+        {
+            try
+            {
+                savedPath = SaveService.SavePng(image, SaveService.ResolveDirectory(_settings));
+                Log.Write($"saved png: {savedPath} ({image.PixelWidth}x{image.PixelHeight})");
+            }
+            catch (Exception ex)
+            {
+                saveError = ex.Message;
+                Log.Exception("auto save png failed", ex);
+            }
+        }
 
         if (!_settings.ShowBalloonAfterCapture) return;
 
-        if (copied)
+        string size = $"{image.PixelWidth} × {image.PixelHeight} 像素";
+
+        if (savedPath != null && copied)
         {
-            _tray?.ShowBalloon("已复制到剪贴板", $"{image.PixelWidth} × {image.PixelHeight} 像素");
+            _tray?.ShowBalloon("已复制并保存", $"{size}\n{savedPath}");
+        }
+        else if (savedPath != null && !copied)
+        {
+            _tray?.ShowBalloon("已保存到文件，但剪贴板复制失败",
+                $"{savedPath}\n剪贴板原因：{clipError ?? "被其他程序占用，请重试。"}",
+                isError: true);
+        }
+        else if (savedPath == null && copied && _settings.AutoSavePng)
+        {
+            _tray?.ShowBalloon("已复制到剪贴板，但保存文件失败", $"{size}\n原因：{saveError}", isError: true);
+        }
+        else if (savedPath == null && copied)
+        {
+            _tray?.ShowBalloon("已复制到剪贴板", size);
         }
         else
         {
-            _tray?.ShowBalloon("复制到剪贴板失败", error ?? "剪贴板被其他程序占用，请重试。", isError: true);
+            _tray?.ShowBalloon("截图失败", $"剪贴板：{clipError ?? "被占用"}\n保存：{saveError ?? "未启用"}",
+                isError: true);
+        }
+    }
+
+    /// <summary>托盘菜单「打开截图文件夹」。</summary>
+    private void OpenSaveFolder()
+    {
+        try
+        {
+            string dir = SaveService.ResolveDirectory(_settings);
+            Log.Write($"open save folder: {dir}");
+            System.Diagnostics.Process.Start("explorer.exe", dir);
+        }
+        catch (Exception ex)
+        {
+            Log.Exception("open save folder failed", ex);
+            _tray?.ShowBalloon("打开文件夹失败", ex.Message, isError: true);
         }
     }
 
